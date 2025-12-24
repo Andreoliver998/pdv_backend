@@ -1,0 +1,232 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/* =========================
+   ENUMS
+========================= */
+
+enum UserRole {
+  OWNER
+  OPERATOR
+}
+
+enum PaymentType {
+  CREDIT
+  DEBIT
+  PIX
+  CASH
+}
+
+enum SaleStatus {
+  PENDING
+  PAID
+  CANCELED
+}
+
+/* =========================
+   MERCHANT
+========================= */
+
+model Merchant {
+  id        Int      @id @default(autoincrement())
+  name      String
+  cnpj      String?  @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     User[]
+  products  Product[]
+  terminals Terminal[]
+  sales     Sale[]
+
+  settings  MerchantSettings?
+
+  @@index([name])
+}
+
+/* =========================
+   USER
+========================= */
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+
+  // 🔐 senha SEMPRE em hash (bcrypt/argon2)
+  passwordHash String
+
+  role      UserRole @default(OWNER)
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchantId Int
+
+  resetTokens PasswordResetToken[]
+
+  @@index([merchantId])
+  @@index([email])
+  @@index([merchantId, isActive])
+}
+
+/* =========================
+   PASSWORD RESET
+========================= */
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+
+  // 🔐 hash do token (nunca salvar token puro)
+  tokenHash String   @unique
+
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([usedAt])
+}
+
+/* =========================
+   TERMINAL (MAQUININHA)
+========================= */
+
+model Terminal {
+  id         Int      @id @default(autoincrement())
+  name       String
+  identifier String   @unique
+  apiKey     String   @unique
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchantId Int
+
+  sales Sale[]
+
+  @@index([merchantId])
+  @@index([identifier])
+}
+
+/* =========================
+   PRODUCT
+========================= */
+
+model Product {
+  id        Int      @id @default(autoincrement())
+  name      String
+  price     Decimal  @db.Decimal(10, 2)
+  stock     Int      @default(0)
+  category  String?
+  imageUrl  String?
+  active    Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchantId Int
+
+  saleItems SaleItem[]
+
+  @@index([merchantId, active])
+  @@index([merchantId, name])
+  @@index([category])
+}
+
+/* =========================
+   SALE
+========================= */
+
+model Sale {
+  id          Int         @id @default(autoincrement())
+  totalAmount Decimal     @db.Decimal(10, 2)
+  paymentType PaymentType
+  status      SaleStatus  @default(PENDING)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  cashReceived Decimal? @db.Decimal(10, 2)
+  changeGiven  Decimal? @db.Decimal(10, 2)
+
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchantId Int
+
+  terminal   Terminal? @relation(fields: [terminalId], references: [id], onDelete: SetNull)
+  terminalId Int?
+
+  items SaleItem[]
+
+  @@index([merchantId, createdAt])
+  @@index([terminalId, createdAt])
+  @@index([status])
+  @@index([paymentType])
+}
+
+/* =========================
+   SALE ITEM
+========================= */
+
+model SaleItem {
+  id        Int     @id @default(autoincrement())
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+
+  sale   Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  saleId Int
+
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productId Int
+
+  @@index([saleId])
+  @@index([productId])
+}
+
+/* =========================
+   MERCHANT SETTINGS
+========================= */
+
+model MerchantSettings {
+  id Int @id @default(autoincrement())
+
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchantId Int      @unique
+
+  allowCredit Boolean @default(true)
+  allowDebit  Boolean @default(true)
+  allowPix    Boolean @default(true)
+  allowCash   Boolean @default(true)
+
+  defaultPayment PaymentType @default(PIX)
+
+  allowNegativeStock   Boolean @default(false)
+  decrementStockOnSale Boolean @default(true)
+
+  receiptHeader String?
+  receiptFooter String?
+
+  reportsDefaultRange String @default("today")
+  reportsMaxRows      Int    @default(100)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([merchantId])
+}
