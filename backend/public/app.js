@@ -17,16 +17,13 @@
  * - Se abrir por IP da rede (host atual) -> API em http://<host>:3333
  * - Se window.API_BASE existir -> usa ele (produção)
  */
-const DEFAULT_API_BASE = (() => {
-  const host = window.location.hostname;
-  if (host === "localhost" || host === "127.0.0.1") {
-    return "http://localhost:3333/api";
-  }
-  return `http://${host}:3333/api`;
-})();
-
-const API_BASE = window.API_BASE || DEFAULT_API_BASE;
-const API_ORIGIN = API_BASE.replace(/\/api\/?$/, ""); // ex: http://localhost:3333 ou http://192.168.x.x:3333
+// Base única para DEV e PROD (via Nginx)
+const API_ORIGIN = window.location.origin;
+const API_BASE =
+  (typeof window !== "undefined" && window.API_BASE) ||
+  (API_ORIGIN.includes("localhost") || API_ORIGIN.includes("127.0.0.1")
+    ? "http://localhost:3333/api"
+    : `${API_ORIGIN}/api`);
 
 let products = [];
 let cart = [];

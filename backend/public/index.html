@@ -624,9 +624,10 @@
 
   <!-- INJETAR API_BASE ANTES DO APP -->
   <script>
-    window.API_BASE = "http://localhost:3333/api";
-    // Exemplo rede (se precisar fixar):
-    // window.API_BASE = "http://192.168.1.109:3333/api";
+    // Produção: usando proxy reverso para servir /api na mesma origem do front
+    window.API_BASE = "/api";
+    // Se preferir expor a API em outra origem/porta, defina aqui, ex.:
+    // window.API_BASE = "http://46.202.149.12:3333/api";
   </script>
 
   <!-- App -->
