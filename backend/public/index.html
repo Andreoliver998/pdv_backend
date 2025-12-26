@@ -624,10 +624,12 @@
 
   <!-- INJETAR API_BASE ANTES DO APP -->
   <script>
-    // Produção: usando proxy reverso para servir /api na mesma origem do front
-    window.API_BASE = "/api";
-    // Se preferir expor a API em outra origem/porta, defina aqui, ex.:
-    // window.API_BASE = "http://46.202.149.12:3333/api";
+    // Produção: API exposta em outra origem/porta
+    window.API_BASE = "http://46.202.149.12:3333/api";
+    window.API_HEALTH = "http://46.202.149.12:3333/api/health";
+    // Se colocar a API atrás de proxy reverso na mesma origem, altere para:
+    // window.API_BASE = "/api";
+    // window.API_HEALTH = "/api/health";
   </script>
 
   <!-- App -->
