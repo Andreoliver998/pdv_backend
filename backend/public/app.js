@@ -24,6 +24,15 @@ const API_BASE =
   (API_ORIGIN.includes("localhost") || API_ORIGIN.includes("127.0.0.1")
     ? "http://localhost:3333/api"
     : `${API_ORIGIN}/api`);
+const API_HEALTH =
+  typeof window !== "undefined" && window.API_HEALTH
+    ? window.API_HEALTH
+    : `${String(
+        ((typeof window !== "undefined" && window.API_BASE) || `${API_ORIGIN}/api`).replace(/\/$/, "")
+      )}/health`;
+const MOCK_MODE = typeof window !== "undefined" && window.MOCK_MODE === true;
+let mockApiFetchImpl = null;
+let mockApiUploadImpl = null;
 
 let products = [];
 let cart = [];
@@ -129,10 +138,12 @@ function isoToBR(iso) {
 
 function resolveImageUrl(imageUrl, fallbackName = "Produto") {
   if (!imageUrl) return `https://via.placeholder.com/200x150?text=${encodeURIComponent(fallbackName)}`;
-  if (String(imageUrl).startsWith("http")) return imageUrl;
-  if (String(imageUrl).startsWith("/uploads/")) return `${API_ORIGIN}${imageUrl}`;
-  if (String(imageUrl).startsWith("uploads/")) return `${API_ORIGIN}/${imageUrl}`;
-  return `${API_ORIGIN}/${String(imageUrl).replace(/^\//, "")}`;
+  const src = String(imageUrl);
+  if (src.startsWith("blob:") || src.startsWith("data:")) return src;
+  if (src.startsWith("http")) return src;
+  if (src.startsWith("/uploads/")) return `${API_ORIGIN}${src}`;
+  if (src.startsWith("uploads/")) return `${API_ORIGIN}/${src}`;
+  return `${API_ORIGIN}/${src.replace(/^\//, "")}`;
 }
 
 function escapeHtml(str) {
@@ -299,6 +310,10 @@ function normalizeApiError(err) {
 ========================= */
 
 async function apiFetch(path, options = {}) {
+  if (MOCK_MODE && typeof mockApiFetchImpl === "function") {
+    return mockApiFetchImpl(path, options);
+  }
+
   const token = getToken();
 
   const headers = {
@@ -338,6 +353,10 @@ async function apiFetch(path, options = {}) {
 }
 
 async function apiUpload(path, formData) {
+  if (MOCK_MODE && typeof mockApiUploadImpl === "function") {
+    return mockApiUploadImpl(path, formData);
+  }
+
   const token = getToken();
 
   let res;
@@ -363,6 +382,239 @@ async function apiUpload(path, formData) {
   }
 
   return res.json();
+}
+
+/* =========================
+   MOCK MODE (sem backend)
+========================= */
+
+if (MOCK_MODE) {
+  console.warn("MOCK_MODE ativo: usando dados fictícios e ignorando chamadas de API.");
+
+  const mockUser = { name: "Usuário Demo" };
+  const mockMerchant = { name: "Loja Demo" };
+  const mockSettings = {
+    allowCredit: true,
+    allowDebit: true,
+    allowPix: true,
+    allowCash: true,
+    defaultPayment: "PIX",
+    allowNegativeStock: false,
+    reportsDefaultRange: "today",
+    reportsMaxRows: 100,
+  };
+
+  const mockProducts = [
+    {
+      id: 1,
+      name: "Coxinha",
+      category: "Salgados",
+      price: 7.5,
+      stock: 50,
+      active: true,
+      imageUrl: "https://via.placeholder.com/200x150.png?text=Coxinha",
+    },
+    {
+      id: 2,
+      name: "Suco de Laranja",
+      category: "Bebidas",
+      price: 6,
+      stock: 30,
+      active: true,
+      imageUrl: "https://via.placeholder.com/200x150.png?text=Suco",
+    },
+    {
+      id: 3,
+      name: "Café",
+      category: "Bebidas",
+      price: 4,
+      stock: 80,
+      active: true,
+      imageUrl: "https://via.placeholder.com/200x150.png?text=Cafe",
+    },
+  ];
+
+  const mockSales = [
+    {
+      id: 10,
+      createdAt: new Date().toISOString(),
+      paymentType: "PIX",
+      status: "PAID",
+      totalAmount: 12.5,
+      items: [
+        { name: "Coxinha", quantity: 1 },
+        { name: "Suco de Laranja", quantity: 1 },
+      ],
+    },
+    {
+      id: 9,
+      createdAt: new Date(Date.now() - 3600_000).toISOString(),
+      paymentType: "PIX",
+      status: "PAID",
+      totalAmount: 12,
+      items: [{ name: "Café", quantity: 3 }],
+    },
+    {
+      id: 7,
+      createdAt: new Date(Date.now() - 86_400_000).toISOString(),
+      paymentType: "CREDIT",
+      status: "PAID",
+      totalAmount: 12.5,
+      items: [
+        { name: "Coxinha", quantity: 1 },
+        { name: "Café", quantity: 1 },
+      ],
+    },
+  ];
+
+  function mockSummary() {
+    const paymentsMap = new Map();
+    let totalAmount = 0;
+    let totalItems = 0;
+    for (const s of mockSales) {
+      totalAmount += Number(s.totalAmount || 0);
+      const count = (s.items || []).reduce((sum, it) => sum + Number(it.quantity || 0), 0);
+      totalItems += count;
+      const key = s.paymentType;
+      paymentsMap.set(key, (paymentsMap.get(key) || 0) + Number(s.totalAmount || 0));
+    }
+    const payments = Array.from(paymentsMap.entries()).map(([paymentType, amount]) => ({
+      paymentType,
+      totalAmount: amount,
+      count: mockSales.filter((s) => s.paymentType === paymentType).length,
+    }));
+    const salesCount = mockSales.length;
+    const avgTicket = salesCount ? totalAmount / salesCount : 0;
+    return { totalAmount, salesCount, avgTicket, payments };
+  }
+
+  mockApiFetchImpl = async function (path, options = {}) {
+    const p = String(path || "");
+    if (p.startsWith("/auth/login") || p.startsWith("/auth/register")) {
+      return { token: "mock-token", user: mockUser, merchant: mockMerchant };
+    }
+    if (p.startsWith("/merchant-settings")) {
+      if ((options.method || "").toUpperCase() === "PUT") {
+        try {
+          const body = options.body ? JSON.parse(options.body) : {};
+          Object.assign(mockSettings, body);
+        } catch {
+          // ignore parse errors in mock
+        }
+      }
+      return mockSettings;
+    }
+    if (p.startsWith("/settings/default") || p.startsWith("/settings")) {
+      return mockSettings;
+    }
+    if (p.startsWith("/products")) {
+      const method = (options.method || "GET").toUpperCase();
+      const parts = p.split("/").filter(Boolean); // ["products", "id?"]
+      const id = parts.length > 1 ? Number(parts[1]) : null;
+      if (method === "GET") {
+        return mockProducts;
+      }
+      if (method === "POST") {
+        const body = options.body ? JSON.parse(options.body) : {};
+        const nextId = mockProducts.length ? Math.max(...mockProducts.map((m) => m.id)) + 1 : 1;
+        const product = {
+          id: nextId,
+          name: body.name || "Produto",
+          category: body.category || "",
+          price: Number(body.price || 0),
+          stock: Number(body.stock || 0),
+          active: body.active !== false,
+          imageUrl: body.imageUrl || "",
+        };
+        mockProducts.push(product);
+        return product;
+      }
+      if (method === "PUT" && id) {
+        const idx = mockProducts.findIndex((p) => p.id === id);
+        if (idx !== -1) {
+          const body = options.body ? JSON.parse(options.body) : {};
+          mockProducts[idx] = { ...mockProducts[idx], ...body, id };
+          return mockProducts[idx];
+        }
+      }
+      return mockProducts;
+    }
+    if (p.startsWith("/reports/summary")) {
+      return mockSummary();
+    }
+    if (p.startsWith("/reports/sales")) {
+      return mockSales;
+    }
+    if (p.startsWith("/reports/top-products")) {
+      const agg = new Map();
+      for (const sale of mockSales) {
+        for (const it of sale.items || []) {
+          const key = it.name || "Produto";
+          const quantity = Number(it.quantity || 0);
+          const price = Number(it.unitPrice || 0);
+          const prev = agg.get(key) || { name: key, quantity: 0, revenue: 0 };
+          agg.set(key, { name: key, quantity: prev.quantity + quantity, revenue: prev.revenue + price * quantity });
+        }
+      }
+      return Array.from(agg.values());
+    }
+    if (p.startsWith("/sales")) {
+      const body = options.body ? JSON.parse(options.body) : { items: [], paymentType: "PIX" };
+      const items = Array.isArray(body.items) ? body.items : [];
+      let totalAmount = 0;
+      const enrichedItems = items.map((it) => {
+        const prod = mockProducts.find((p) => p.id === Number(it.productId));
+        const quantity = Number(it.quantity || 0);
+        const price = prod ? Number(prod.price || 0) : 0;
+        totalAmount += price * quantity;
+        if (prod) {
+          const allowNegative = toBool(mockSettings.allowNegativeStock, false);
+          prod.stock = allowNegative ? prod.stock - quantity : Math.max(0, prod.stock - quantity);
+        }
+        return {
+          productId: it.productId,
+          quantity,
+          name: prod?.name || "Produto",
+          unitPrice: price,
+        };
+      });
+
+      const sale = {
+        id: mockSales.length ? Math.max(...mockSales.map((s) => s.id)) + 1 : 1,
+        createdAt: new Date().toISOString(),
+        paymentType: body.paymentType || "PIX",
+        status: "PAID",
+        totalAmount,
+        items: enrichedItems,
+      };
+      mockSales.unshift(sale);
+      return sale;
+    }
+    return null;
+  };
+
+  mockApiUploadImpl = async function (path, formData) {
+    // Simula upload de imagem associando uma blob URL ao produto
+    const productId = Number(formData?.get?.("productId"));
+    const file = formData?.get?.("image");
+    if (!productId || !file) return { ok: true };
+
+    const prod = mockProducts.find((p) => p.id === productId);
+    if (!prod) return { ok: true };
+
+    try {
+      const url = URL.createObjectURL(file);
+      prod.imageUrl = url;
+    } catch {
+      // fallback: mantém imagem existente
+    }
+
+    return { ok: true };
+  };
+
+  // já considera usuário logado
+  setToken("mock-token");
+  setSessionInfo(mockUser, mockMerchant);
 }
 
 /* =========================
@@ -416,13 +668,28 @@ function exportJsonToXlsxFile(rows, sheetName, fileName, columnWidths) {
   XLSX.writeFile(wb, fileName);
 }
 
+const paymentLabels = { CREDIT: "Crédito", DEBIT: "Débito", PIX: "PIX", CASH: "Dinheiro" };
+const statusLabels = { PAID: "Pago", PENDING: "Pendente", CANCELED: "Cancelado" };
+const humanPayment = (paymentType) => paymentLabels[paymentType] || paymentType;
+const humanStatus = (status) => statusLabels[status] || status;
+function formatSaleItemsList(items) {
+  // Formato compacto: Nome (xQtd) separados por barra vertical
+  return (items || [])
+    .map((it) => `${it.name || "—"} (x${it.quantity || 0})`)
+    .join(" | ");
+}
+
 /* =========================
    API HEALTH
 ========================= */
 
 async function pingApi() {
+  if (MOCK_MODE) {
+    setApiStatus(true, "API: Mock");
+    return;
+  }
   try {
-    await fetch(`${API_ORIGIN}/health`, { cache: "no-store" });
+    await fetch(API_HEALTH, { cache: "no-store" });
     setApiStatus(true, "API: Online");
   } catch {
     setApiStatus(false, "API: Offline");
@@ -1207,11 +1474,19 @@ function exportSalesCsv() {
   rows.push(["Relatório de Vendas (PDV)"]);
   rows.push([`Período: ${from || "-"} até ${to || "-"}`]);
   rows.push([]);
-  rows.push(["ID", "Data/Hora", "Pagamento", "Status", "Total (R$)", "Qtd Itens"]);
+  rows.push(["ID", "Data/Hora", "Pagamento", "Status", "Total (R$)", "Qtd Itens", "Itens"]);
 
   for (const s of cachedSalesForExport) {
     const itemsCount = (s.items || []).reduce((sum, it) => sum + Number(it.quantity || 0), 0);
-    rows.push([s.id, isoToBR(s.createdAt), s.paymentType, s.status, Number(s.totalAmount || 0), itemsCount]);
+    rows.push([
+      s.id,
+      isoToBR(s.createdAt),
+      humanPayment(s.paymentType),
+      humanStatus(s.status),
+      Number(s.totalAmount || 0),
+      itemsCount,
+      formatSaleItemsList(s.items),
+    ]);
   }
 
   const fileName = `relatorio_vendas_${from || formatDateForFileName()}_a_${to || formatDateForFileName()}.csv`;
@@ -1224,18 +1499,20 @@ function exportSalesXlsx() {
 
   const rows = (cachedSalesForExport || []).map((s) => {
     const itemsCount = (s.items || []).reduce((sum, it) => sum + Number(it.quantity || 0), 0);
+    const itemsList = formatSaleItemsList(s.items);
     return {
       ID: s.id,
       "Data/Hora": isoToBR(s.createdAt),
-      Pagamento: s.paymentType,
-      Status: s.status,
+      Pagamento: humanPayment(s.paymentType),
+      Status: humanStatus(s.status),
       "Total (R$)": Number(s.totalAmount || 0),
       "Qtd. Itens": itemsCount,
+      Itens: itemsList,
     };
   });
 
   const fileName = `relatorio_vendas_${from || formatDateForFileName()}_a_${to || formatDateForFileName()}.xlsx`;
-  exportJsonToXlsxFile(rows, "Relatório", fileName, [10, 22, 14, 12, 14, 12]);
+  exportJsonToXlsxFile(rows, "Relatório", fileName, [10, 22, 14, 12, 14, 12, 60]);
 }
 
 /* =========================
@@ -1631,26 +1908,39 @@ function init() {
   setupLoginUX();
   setupMerchantSettingsEvents();
 
-  pingApi();
-  setInterval(pingApi, 15000);
-
-  const token = getToken();
-  if (token) {
+  if (MOCK_MODE) {
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("appRoot").style.display = "flex";
-
     hydrateTopBarInfo();
-    setApiStatus(true, "API: Online");
-
+    setApiStatus(true, "API: Mock");
     Promise.resolve()
       .then(loadMerchantSettings)
       .then(loadProducts)
       .then(loadProductsPanel)
       .then(setDefaultReportDates)
-      .catch(() => logout());
+      .catch(() => {});
   } else {
-    document.getElementById("loginBox").style.display = "flex";
-    document.getElementById("appRoot").style.display = "none";
+    pingApi();
+    setInterval(pingApi, 15000);
+
+    const token = getToken();
+    if (token) {
+      document.getElementById("loginBox").style.display = "none";
+      document.getElementById("appRoot").style.display = "flex";
+
+      hydrateTopBarInfo();
+      setApiStatus(true, "API: Online");
+
+      Promise.resolve()
+        .then(loadMerchantSettings)
+        .then(loadProducts)
+        .then(loadProductsPanel)
+        .then(setDefaultReportDates)
+        .catch(() => logout());
+    } else {
+      document.getElementById("loginBox").style.display = "flex";
+      document.getElementById("appRoot").style.display = "none";
+    }
   }
 
   renderCart();
