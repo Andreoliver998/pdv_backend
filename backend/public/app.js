@@ -1401,21 +1401,17 @@ function setDefaultReportDates() {
   if (!toEl.value) toEl.value = today;
 }
 
-function buildReportRange(fromValue, toValue) {
-  const now = new Date();
-  const toMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+function buildReportRangeRaw(fromValue, toValue) {
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10); // yyyy-mm-dd
 
-  const start = fromValue
-    ? new Date(`${fromValue}T00:00:00`)
-    : new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const end = toValue ? new Date(`${toValue}T23:59:59.999`) : toMidnight;
+  const from = fromValue || todayStr;
+  let to = toValue || todayStr;
 
-  if (end < start) end.setTime(start.getTime());
+  // garante que to >= from
+  if (to < from) to = from;
 
-  return {
-    fromIso: start.toISOString(),
-    toIso: end.toISOString(),
-  };
+  return { from, to };
 }
 
 async function loadReports() {
@@ -1424,14 +1420,14 @@ async function loadReports() {
 
   const from = document.getElementById("fromDate")?.value || "";
   const to = document.getElementById("toDate")?.value || "";
-  const { fromIso, toIso } = buildReportRange(from, to);
+  const { from: fromStr, to: toStr } = buildReportRangeRaw(from, to);
 
   safeSetLoading(true);
 
   try {
-    const summary = await apiFetch(`/reports/summary?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`);
-    const salesRaw = await apiFetch(`/reports/sales?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`);
-    const top = await apiFetch(`/reports/top-products?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`);
+    const summary = await apiFetch(`/reports/summary?from=${encodeURIComponent(fromStr)}&to=${encodeURIComponent(toStr)}`);
+    const salesRaw = await apiFetch(`/reports/sales?from=${encodeURIComponent(fromStr)}&to=${encodeURIComponent(toStr)}`);
+    const top = await apiFetch(`/reports/top-products?from=${encodeURIComponent(fromStr)}&to=${encodeURIComponent(toStr)}`);
 
     const sales = (salesRaw || []).map((s) => {
       const items = decorateSaleItems(s.items);
