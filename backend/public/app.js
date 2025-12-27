@@ -10,26 +10,24 @@
 
 /**
  * Em produção, você pode injetar window.API_BASE antes do App.js carregar.
- * Correção: remover IP fixo e detectar ambiente automaticamente.
+ * Correção: remover IP fixo e usar caminho relativo (/api) para proxy reverso.
  *
  * Regras:
- * - Se abrir em localhost/127.0.0.1 -> API em http://localhost:3333
- * - Se abrir por IP da rede (host atual) -> API em http://<host>:3333
- * - Se window.API_BASE existir -> usa ele (produção)
+ * - Por padrão consumimos "/api" na mesma origem (via proxy).
+ * - Se window.API_BASE existir -> usa ele (ex.: host/porta custom em DEV).
  */
 // Base única para DEV e PROD (via Nginx)
 const API_ORIGIN = window.location.origin;
-const API_BASE =
-  (typeof window !== "undefined" && window.API_BASE) ||
-  (API_ORIGIN.includes("localhost") || API_ORIGIN.includes("127.0.0.1")
-    ? "http://localhost:3333/api"
-    : `${API_ORIGIN}/api`);
-const API_HEALTH =
-  typeof window !== "undefined" && window.API_HEALTH
-    ? window.API_HEALTH
-    : `${String(
-        ((typeof window !== "undefined" && window.API_BASE) || `${API_ORIGIN}/api`).replace(/\/$/, "")
-      )}/health`;
+const API_BASE = (() => {
+  const injected = typeof window !== "undefined" ? window.API_BASE : null;
+  const base = (injected && String(injected).trim()) || "/api";
+  return base.replace(/\/$/, "");
+})();
+const API_HEALTH = (() => {
+  const injected = typeof window !== "undefined" ? window.API_HEALTH : null;
+  const base = (injected && String(injected).trim()) || `${API_BASE}/health`;
+  return base.replace(/\/$/, "");
+})();
 const MOCK_MODE = typeof window !== "undefined" && window.MOCK_MODE === true;
 let mockApiFetchImpl = null;
 let mockApiUploadImpl = null;

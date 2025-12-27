@@ -625,12 +625,9 @@
 
   <!-- INJETAR API_BASE ANTES DO APP -->
   <script>
-    // Produção: API exposta na porta 3333 (sem proxy reverso)
-    window.API_BASE = "http://46.202.149.12:3333/api";
-    window.API_HEALTH = "http://46.202.149.12:3333/api/health";
-    // Se configurar proxy reverso na mesma origem, pode voltar para:
-    // window.API_BASE = "/api";
-    // window.API_HEALTH = "/api/health";
+    // Consome a API pela mesma origem via proxy reverso (/api)
+    window.API_BASE = "/api";
+    window.API_HEALTH = "/api/health";
   </script>
 
   <!-- App -->
