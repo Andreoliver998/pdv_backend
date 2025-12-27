@@ -673,9 +673,8 @@ const statusLabels = { PAID: "Pago", PENDING: "Pendente", CANCELED: "Cancelado" 
 const humanPayment = (paymentType) => paymentLabels[paymentType] || paymentType;
 const humanStatus = (status) => statusLabels[status] || status;
 function formatSaleItemsList(items) {
-  // Formato compacto: Nome (xQtd) separados por barra vertical
   return (items || [])
-    .map((it) => `${it.name || "—"} (x${it.quantity || 0})`)
+    .map((it) => `${it.name || "—"} (x${it.quantity || 0}) - ${moneyBR(it.unitPrice ?? 0)}`)
     .join(" | ");
 }
 
@@ -1135,6 +1134,15 @@ function getSalesSearchQuery() {
   return (document.getElementById("salesSearch")?.value || "").trim().toLowerCase();
 }
 
+function findProductById(id) {
+  const pid = Number(id);
+  return (
+    products.find((p) => Number(p.id) === pid) ||
+    cachedProductsForPanel.find((p) => Number(p.id) === pid) ||
+    null
+  );
+}
+
 function productMatchesSearch(p, q) {
   if (!q) return true;
   const name = String(p.name || "").toLowerCase();
@@ -1327,6 +1335,7 @@ async function finishSale() {
 
     await loadProducts();
     await loadProductsPanel();
+    setDefaultReportDates();
     await loadReports();
   } catch (err) {
     setCartMessage(normalizeApiError(err) || "Erro ao finalizar venda.");
@@ -1392,8 +1401,20 @@ async function loadReports() {
 
   try {
     const summary = await apiFetch(`/reports/summary?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
-    const sales = await apiFetch(`/reports/sales?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+    const salesRaw = await apiFetch(`/reports/sales?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
     const top = await apiFetch(`/reports/top-products?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+
+    const sales = (salesRaw || []).map((s) => {
+      const items = (s.items || []).map((it) => {
+        const prod = findProductById(it.productId);
+        return {
+          ...it,
+          name: it.name || prod?.name || "—",
+          unitPrice: it.unitPrice ?? prod?.price ?? 0,
+        };
+      });
+      return { ...s, items };
+    });
 
     document.getElementById("repTotal").textContent = moneyBR(summary.totalAmount);
     document.getElementById("repCount").textContent = String(summary.salesCount);
