@@ -1143,6 +1143,17 @@ function findProductById(id) {
   );
 }
 
+function decorateSaleItems(items) {
+  return (items || []).map((it) => {
+    const prod = findProductById(it.productId);
+    return {
+      ...it,
+      name: it?.name || prod?.name || `Produto #${it?.productId ?? "?"}`,
+      unitPrice: it?.unitPrice ?? prod?.price ?? 0,
+    };
+  });
+}
+
 function productMatchesSearch(p, q) {
   if (!q) return true;
   const name = String(p.name || "").toLowerCase();
@@ -1405,14 +1416,7 @@ async function loadReports() {
     const top = await apiFetch(`/reports/top-products?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
 
     const sales = (salesRaw || []).map((s) => {
-      const items = (s.items || []).map((it) => {
-        const prod = findProductById(it.productId);
-        return {
-          ...it,
-          name: it.name || prod?.name || "—",
-          unitPrice: it.unitPrice ?? prod?.price ?? 0,
-        };
-      });
+      const items = decorateSaleItems(s.items);
       return { ...s, items };
     });
 
@@ -1472,8 +1476,8 @@ function renderSalesTable(sales) {
     tr.innerHTML = `
       <td>${s.id}</td>
       <td>${isoToBR(s.createdAt)}</td>
-      <td>${escapeHtml(s.paymentType)}</td>
-      <td>${escapeHtml(s.status)}</td>
+      <td>${escapeHtml(humanPayment(s.paymentType))}</td>
+      <td>${escapeHtml(humanStatus(s.status))}</td>
       <td>${moneyBR(s.totalAmount)}</td>
       <td>${itemsCount}</td>
     `;
