@@ -13,14 +13,23 @@
  * Correção: remover IP fixo e usar caminho relativo (/api) para proxy reverso.
  *
  * Regras:
- * - Por padrão consumimos "/api" na mesma origem (via proxy).
+ * - Prod: consumimos "/api" na mesma origem (proxy).
+ * - Dev: se precisar apontar para API local, use window.API_BASE ou API_ORIGIN.
  * - Se window.API_BASE existir -> usa ele (ex.: host/porta custom em DEV).
  */
 // Base única para DEV e PROD (via Nginx)
-const API_ORIGIN = window.location.origin;
+const API_ORIGIN = (() => {
+  if (typeof window === "undefined") return "";
+  const origin = window.location.origin;
+  const isDev = origin.includes("localhost") || origin.includes("127.0.0.1");
+  // Prod: string vazia força uso do proxy reverso (/api) na mesma origem
+  return isDev ? "http://127.0.0.1:3333" : "";
+})();
 const API_BASE = (() => {
   const injected = typeof window !== "undefined" ? window.API_BASE : null;
-  const base = (injected && String(injected).trim()) || "/api";
+  const base =
+    (injected && String(injected).trim()) ||
+    (API_ORIGIN ? `${API_ORIGIN}/api` : "/api");
   return base.replace(/\/$/, "");
 })();
 const API_HEALTH = (() => {

@@ -27,6 +27,10 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3333;
 const NODE_ENV = String(process.env.NODE_ENV || "development").trim();
 const APP_URL_RAW = String(process.env.APP_URL || "").trim();
+const DEFAULT_PROD_ORIGINS = [
+  "https://paytech.app.br",
+  "https://www.paytech.app.br",
+];
 
 /**
  * Se você quiser desligar o painel estático em produção,
@@ -93,11 +97,15 @@ function isLanOrigin(o) {
  *     (ex: https://a.com,https://b.com)
  * =====================================================
  */
-const PROD_ALLOWED_ORIGINS = APP_URL_RAW
-  ? APP_URL_RAW.split(",")
-      .map((u) => normalizeOrigin(u))
-      .filter(Boolean)
-  : [];
+const PROD_ALLOWED_ORIGINS = (() => {
+  const fromEnv = APP_URL_RAW
+    ? APP_URL_RAW.split(",")
+        .map((u) => normalizeOrigin(u))
+        .filter(Boolean)
+    : [];
+  const merged = new Set([...DEFAULT_PROD_ORIGINS, ...fromEnv]);
+  return Array.from(merged);
+})();
 
 function isAllowedProdOrigin(o) {
   if (!o) return false;
