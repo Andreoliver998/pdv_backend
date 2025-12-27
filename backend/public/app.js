@@ -1422,6 +1422,15 @@ async function loadReports() {
   const to = document.getElementById("toDate")?.value || "";
   const { from: fromStr, to: toStr } = buildReportRangeRaw(from, to);
 
+  // garante que os inputs reflitam o range usado
+  const fromEl = document.getElementById("fromDate");
+  const toEl = document.getElementById("toDate");
+  if (fromEl && !fromEl.value) fromEl.value = fromStr;
+  if (toEl && !toEl.value) toEl.value = toStr;
+  if (fromEl && toEl && toEl.value < fromEl.value) {
+    toEl.value = fromEl.value;
+  }
+
   safeSetLoading(true);
 
   try {
