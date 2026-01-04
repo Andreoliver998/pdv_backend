@@ -1,0 +1,82 @@
+# ===============================
+# Node.js
+# ===============================
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===============================
+# Environment variables
+# ===============================
+.env
+.env.*
+!.env.example
+.envrc
+
+# ===============================
+# Prisma
+# ===============================
+# Prisma migrations devem ser versionadas (principalmente em produção).
+# Se você quiser ignorar apenas artefatos gerados, adicione regras específicas aqui.
+
+# ===============================
+# Local databases / artifacts
+# ===============================
+*.db
+*.db-journal
+
+# ===============================
+# Uploads do PDV
+# ===============================
+uploads/
+backend/uploads/
+
+# ===============================
+# Logs
+# ===============================
+logs/
+*.log
+
+# ===============================
+# IDEs / Editores
+# ===============================
+.idea/
+.vscode/
+*.iml
+
+# ===============================
+# Build
+# ===============================
+dist/
+build/
+
+# ===============================
+# Sistema Operacional
+# ===============================
+.DS_Store
+Thumbs.db
+
+# ===============================
+# Android / Gradle (mantém fontes versionadas)
+# ===============================
+**/.gradle/
+**/build/
+**/captures/
+**/.externalNativeBuild/
+**/.cxx/
+local.properties
+*.apk
+*.aab
+*.keystore
+*.jks
+key.properties
+
+# ===============================
+# Outros caches
+# ===============================
+coverage/
+.cache/
+.npm/
+android-app_backup/out/
+backend/*.bak

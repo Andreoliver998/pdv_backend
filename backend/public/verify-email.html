@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Verificar e-mail</title>
+    <link rel="icon" href="./asset/favicon_pay.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="theme-color" content="#0b1220" />
+  </head>
+
+  <body>
+    <div class="login-box" role="region" aria-label="Verificar e-mail">
+      <div class="login-card" role="dialog" aria-modal="true" aria-labelledby="verifyTitle">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">PDV</div>
+          <div class="brand-text">
+            <h2 id="verifyTitle">Verificar e-mail</h2>
+            <p class="hint" style="margin: 2px 0 0">Confirmando seu e-mail...</p>
+          </div>
+        </div>
+
+        <div class="form">
+          <p id="verifyMsg" class="hint" role="status" aria-live="polite"></p>
+          <button id="goLoginBtn" type="button" class="btn-primary full" style="margin-top: 12px">
+            Ir para o login
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="js/maintenance-banner.js"></script>
+    <script>
+      function computeApiBase() {
+        const raw = String(window.__APP_CONFIG__?.API_BASE_URL || "")
+          .trim()
+          .replace(/\/$/, "");
+
+        if (!raw) return "/api";
+        if (raw.startsWith("/")) return raw;
+
+        try {
+          const url = new URL(raw);
+          if (!url.pathname || url.pathname === "/") url.pathname = "/api";
+          return url.toString().replace(/\/$/, "");
+        } catch {
+          return raw;
+        }
+      }
+
+      const API_BASE = computeApiBase();
+
+      function setMsg(text) {
+        const el = document.getElementById("verifyMsg");
+        if (el) el.textContent = text || "";
+      }
+
+      document.getElementById("goLoginBtn").addEventListener("click", () => {
+        window.location.href = "index.html";
+      });
+
+      const token = new URLSearchParams(window.location.search).get("token") || "";
+      if (!token) {
+        setMsg('Token ausente. Solicite um novo link em "Reenviar verificação".');
+      } else {
+        setMsg("Verificando e-mail...");
+
+        (async () => {
+          try {
+            const res = await fetch(`${API_BASE}/auth/verify-email?token=${encodeURIComponent(token)}`, {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+              cache: "no-store",
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+
+            setMsg(data.message || "E-mail verificado com sucesso. Você já pode fazer login.");
+            setTimeout(() => {
+              window.location.href = "index.html";
+            }, 900);
+          } catch (err) {
+            setMsg(String(err?.message || "Não foi possível verificar o e-mail."));
+          }
+        })();
+      }
+    </script>
+  </body>
+</html>

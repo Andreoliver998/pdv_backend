@@ -1,0 +1,771 @@
+<!-- frontend/index.html  -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>SistemaPaytech</title>
+  <link rel="icon" href="./asset/pay-2.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="neon.css" />
+  <meta name="theme-color" content="#0b1220" />
+</head>
+
+<body>
+
+
+<!-- 
+
+
+  Criado por: "CARLOS ANDRÉ ALMEIDA DE OLIVEIRA."
+
+ Estabelecimento de trabalho: "PENSÃO DA DONA TEREZINHA.." 
+ 
+ 
+ 
+ -->
+
+
+
+
+
+
+  <!-- Skip link (acessibilidade) -->
+  <a class="skip-link" href="#mainContent">Pular para o conteúdo principal</a>
+
+  <!-- AUTH (ENTRAR / CRIAR CONTA) -->
+  <div id="loginBox" class="login-box" role="region" aria-label="Área de acesso">
+    <div class="login-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">PDV</div>
+        <div class="brand-text">
+          <h2 id="authTitle">Acesso ao sistema</h2>
+          <!-- <p class="login-sub">Entre com sua conta ou crie uma conta para iniciar um ambiente novo.</p> -->
+        </div>
+      </div>
+
+      <!-- Abas -->
+      <div class="auth-tabs" role="tablist" aria-label="Ações de acesso">
+        <button id="tabLoginBtn" class="auth-tab active" type="button" role="tab" aria-selected="true"
+          aria-controls="auth-login">
+          Entrar
+        </button>
+
+        <button id="tabRegisterBtn" class="auth-tab" type="button" role="tab" aria-selected="false"
+          aria-controls="auth-register">
+          Criar conta
+        </button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <section id="auth-login" class="auth-pane active" role="tabpanel" aria-label="Entrar">
+        <form id="loginForm" class="form" autocomplete="on" novalidate>
+          <label class="field" for="email">
+            <span>E-mail</span>
+            <input id="email" type="email" placeholder="ex: atendimento@empresa.com" autocomplete="username"
+              inputmode="email" required />
+          </label>
+
+          <label class="field" for="password">
+            <span>Senha</span>
+            <div class="password-field">
+              <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+              <button
+                type="button"
+                class="password-toggle"
+                aria-label="Mostrar senha"
+                aria-pressed="false"
+                data-toggle-password="#password"
+                title="Mostrar senha"
+              >
+                <span class="icon-eye" aria-hidden="true"></span>
+              </button>
+            </div>
+          </label>
+
+          <button id="loginBtn" type="submit" class="btn-neon btn-neon--orange full">
+            Entrar
+          </button>
+
+          <button id="resendVerificationBtn" type="button" class="btn-outline full" style="display:none; margin-top:8px;">
+            Reenviar verificação
+          </button>
+
+          <button id="forgotPasswordLink" type="button" class="btn-link">
+            Esqueci minha senha
+          </button>
+
+          <div id="googleLoginBoxLogin" style="margin-top:10px;">
+            <div id="googleBtnLogin"></div>
+            <p id="googleMsgLogin" class="hint" role="status" aria-live="polite"></p>
+          </div>
+
+          <div id="forgotBox" style="display:none; margin-top:10px;">
+            <label class="field" for="forgotEmail">
+              <span>E-mail para redefinição</span>
+              <input id="forgotEmail" type="email" placeholder="ex: atendimento@empresa.com" />
+            </label>
+
+            <button id="forgotSendBtn" type="button" class="btn-outline full">
+              Enviar link
+            </button>
+            <button id="forgotCancelBtn" type="button" class="btn-ghost small full" style="margin-top:8px;">
+              Voltar
+            </button>
+            <p id="forgotMsg" class="hint" role="status" aria-live="polite"></p>
+          </div>
+
+          <p id="loginMsg" class="hint" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <!-- REGISTER FORM -->
+      <section id="auth-register" class="auth-pane" role="tabpanel" aria-label="Criar conta">
+        <form id="registerForm" class="form" autocomplete="on" novalidate>
+          <label class="field" for="regName">
+            <span>Seu nome</span>
+            <input id="regName" type="text" placeholder="Ex.: Carlos André" autocomplete="name" required />
+          </label>
+
+          <label class="field" for="regEmail">
+            <span>E-mail</span>
+            <input id="regEmail" type="email" placeholder="ex: dono@minhaloja.com" autocomplete="email"
+              inputmode="email" required />
+          </label>
+
+          <label class="field" for="regPassword">
+            <span>Senha</span>
+            <input id="regPassword" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password"
+              required />
+            <small class="hint">Dica: use uma senha forte. Mínimo recomendado: 6+ caracteres.</small>
+          </label>
+
+          <label class="field" for="regMerchantName">
+            <span>Nome do estabelecimento</span>
+            <input id="regMerchantName" type="text" placeholder="Ex.: Minha Loja" autocomplete="organization"
+              required />
+          </label>
+
+          <button id="registerBtn" type="submit" class="btn-neon btn-neon--orange full">
+            Criar conta
+          </button>
+
+          <div id="googleLoginBoxRegister" style="margin-top:10px;">
+            <div id="googleBtnRegister"></div>
+            <p id="googleMsgRegister" class="hint" role="status" aria-live="polite"></p>
+          </div>
+
+          <p id="registerMsg" class="hint" role="status" aria-live="polite"></p>
+
+          <!-- <small class="hint"> 
+            Ao criar a conta, você inicia um ambiente próprio e vazio (sem dados de outras pessoas).
+          </small>-->
+        </form>
+      </section>
+
+      <div class="login-foot">
+        <small class="hint">
+          <!-- Se houver erro de conexão, confirme se a API está online e acessível. -->
+        </small>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div class="app" id="appRoot" style="display:none">
+
+    <!-- Top Bar -->
+      <header class="top-bar" role="banner">
+        <div class="top-left">
+          <img id="merchantLogoImg" class="merchant-logo" alt="Logo do estabelecimento" style="display:none" />
+          <div class="top-left-text">
+            <h1 class="app-title">Painel</h1>
+            <span class="subtitle" id="merchantSubtitle">-</span>
+          </div>
+        </div>
+
+      <div class="top-right" role="group" aria-label="Status e sessão">
+        <span class="status-dot" id="apiDot" aria-hidden="true"></span>
+        <span class="status-text" id="apiStatusText" role="status" aria-live="polite"> —</span>
+
+        <button id="logoutBtn" class="btn-ghost" type="button">
+          Sair
+        </button>
+      </div>
+    </header>
+    <div class="neon-bar" aria-hidden="true"></div>
+    <div id="maintenanceBanner" class="maintenance-banner" role="status" aria-live="polite" style="display:none"></div>
+
+    <div class="shell">
+      <!-- Sidebar -->
+      <aside class="sidebar" role="navigation" aria-label="Menu principal">
+        <div class="sidebar-title">Menu</div>
+
+        <div class="nav" role="tablist" aria-label="Seções do painel">
+          <button class="nav-item active" data-tab="sales" role="tab" aria-selected="true" aria-controls="tab-sales"
+            type="button">
+            <span class="nav-dot" aria-hidden="true"></span>
+            <span>Vendas</span>
+          </button>
+
+          <button class="nav-item" data-tab="products" role="tab" aria-selected="false" aria-controls="tab-products"
+            type="button">
+            <span class="nav-dot" aria-hidden="true"></span>
+            <span>Produtos</span>
+          </button>
+
+          <button class="nav-item" data-tab="reports" role="tab" aria-selected="false" aria-controls="tab-reports"
+            type="button">
+            <span class="nav-dot" aria-hidden="true"></span>
+            <span>Relatórios</span>
+          </button>
+
+          <button class="nav-item" data-tab="settings" role="tab" aria-selected="false" aria-controls="tab-settings"
+            type="button">
+            <span class="nav-dot" aria-hidden="true"></span>
+            <span>Configurações</span>
+          </button>
+        </div>
+
+        <div class="sidebar-foot" aria-label="Informações do ambiente">
+          <div class="mini">
+            <div class="mini-label">Ambiente</div>
+            <div class="mini-value" id="envText">—</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Content -->
+      <main class="content" id="mainContent" role="main">
+
+        <!-- VENDAS -->
+        <section id="tab-sales" class="tab-page active" role="tabpanel" aria-label="Vendas">
+          <div class="page">
+            <div class="page-header">
+              <div>
+                <h2>Vendas</h2>
+              </div>
+
+              <div class="page-actions">
+                <input id="salesSearch" class="input" placeholder="Buscar produto..." aria-label="Buscar produto" />
+              </div>
+            </div>
+
+            <nav class="category-bar" id="categoryBar" aria-label="Categorias de venda">
+              <button class="category active" data-category="all" type="button">Todos</button>
+              <button class="category" data-category="bar" type="button">Bar / Boteco</button>
+              <button class="category" data-category="restaurant" type="button">Restaurante</button>
+              <button class="category" data-category="acai" type="button">Açaí & Sorvete</button>
+              <button class="category" data-category="coffee" type="button">Cafeteria</button>
+            </nav>
+
+            <div class="layout">
+              <section class="products-section" aria-label="Lista de produtos">
+                <div class="section-head">
+                  <h3 class="section-title">Produtos</h3>
+                  <span class="hint" id="productsCountInfo" aria-live="polite"></span>
+                </div>
+                <div id="productGrid" class="product-grid" role="list"></div>
+              </section>
+
+              <section class="cart-section" aria-label="Carrinho">
+                <div class="section-head">
+                  <h3 class="section-title">Carrinho</h3>
+                  <span class="badge" id="cartCountBadge" aria-hidden="true">0</span>
+                </div>
+
+                <div id="cartItems" class="cart-items" role="list" aria-label="Itens no carrinho"></div>
+
+                <div class="cart-summary" aria-label="Resumo do carrinho">
+                  <div class="summary-row">
+                    <span>Total</span>
+                    <span class="summary-total" id="cartTotalText">R$ 0,00</span>
+                  </div>
+
+                  <div class="summary-row">
+                    <span>Itens</span>
+                    <span id="cartCount">0</span>
+                  </div>
+
+                  <div class="summary-row">
+                    <label for="paymentType">Pagamento</label>
+                    <select id="paymentType" class="payment-select" aria-label="Forma de pagamento">
+                      <option value="CREDIT">Crédito</option>
+                      <option value="DEBIT">Débito</option>
+                      <option value="PIX">PIX</option>
+                      <option value="CASH">Dinheiro</option>
+                    </select>
+                  </div>
+
+                  <div class="cart-actions">
+                    <button id="finishSaleBtn" class="btn-primary full" type="button">
+                      Finalizar venda
+                    </button>
+                    <button id="clearCartBtn" class="btn-outline full" type="button">
+                      Limpar carrinho
+                    </button>
+                  </div>
+
+                  <p id="cartMessage" class="hint" role="status" aria-live="polite"></p>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <!-- PRODUTOS -->
+        <section id="tab-products" class="tab-page" role="tabpanel" aria-label="Produtos">
+          <div class="page">
+            <div class="page-header">
+              <div>
+                <h2>Produtos</h2>
+              </div>
+
+              <div class="page-actions">
+                <input id="productsSearch" class="input" placeholder="Buscar por nome ou categoria..."
+                  aria-label="Buscar produtos" />
+                <button id="exportProductsCsvBtn" class="btn-ghost small" type="button">Exportar CSV</button>
+                <button id="exportProductsXlsxBtn" class="btn-ghost small" type="button">Exportar Excel</button>
+                <button id="newProductBtn" class="btn-primary small" type="button">Novo produto</button>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="table-wrap" role="region" aria-label="Tabela de produtos" tabindex="0">
+                <table class="table" id="productsTable">
+                  <thead>
+                    <tr>
+                      <th scope="col">ID</th>
+                      <th scope="col">Produto</th>
+                      <th scope="col">Categoria</th>
+                      <th scope="col">Preço</th>
+                      <th scope="col" class="stock-col">Estoque</th>
+                      <th scope="col">Status</th>
+                      <th scope="col" style="width: 220px;">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+
+              <p class="hint" id="productsMsg" role="status" aria-live="polite"></p>
+            </div>
+
+            <!-- Modal Produto -->
+            <div class="modal" id="productModal" style="display:none">
+              <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle"
+                aria-describedby="modalMsg">
+                <div class="modal-head">
+                  <h3 id="modalTitle">Produto</h3>
+                  <button class="icon-btn" id="closeProductModalBtn" type="button" title="Fechar"
+                    aria-label="Fechar">×</button>
+                </div>
+
+                <div class="modal-grid">
+                  <label class="field" for="mName">
+                    <span>Nome</span>
+                    <input id="mName" class="input" />
+                  </label>
+
+                  <label class="field" for="mCategory">
+                    <span>Categoria</span>
+                    <input id="mCategory" class="input" placeholder="ex: Salgados" />
+                  </label>
+
+                  <label class="field" for="mPrice">
+                    <span>Preço (R$)</span>
+                    <input id="mPrice" class="input" type="number" step="0.01" min="0" inputmode="decimal" />
+                  </label>
+
+                  <label class="field stock-field" for="mStock">
+                    <span>Estoque</span>
+                    <input id="mStock" class="input" type="number" step="1" min="0" inputmode="numeric" />
+                  </label>
+
+                  <label class="field" for="mActive">
+                    <span>Status</span>
+                    <select id="mActive" class="input">
+                      <option value="true">Ativo</option>
+                      <option value="false">Inativo</option>
+                    </select>
+                  </label>
+
+                  <label class="field" for="mImage">
+                    <span>Imagem</span>
+                    <input id="mImage" class="input" type="file" accept="image/jpeg,image/png,image/webp" />
+                    <small class="hint">JPG/PNG/WebP até 5MB.</small>
+                  </label>
+                </div>
+
+                <div class="modal-actions">
+                  <button id="saveProductBtn" class="btn-primary" type="button">Salvar</button>
+                  <button id="cancelProductBtn" class="btn-outline" type="button">Cancelar</button>
+                </div>
+
+                <p class="hint" id="modalMsg" role="status" aria-live="polite"></p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- RELATÓRIOS -->
+        <section id="tab-reports" class="tab-page" role="tabpanel" aria-label="Relatórios">
+          <div class="reports">
+            <div class="reports-header">
+              <div>
+                <h2>Relatórios</h2>
+              </div>
+
+              <div class="filters" aria-label="Filtros do relatório de vendas">
+                <label for="fromDate">
+                  Data inicial:
+                  <input type="date" id="fromDate" />
+                </label>
+
+                <label for="toDate">
+                  Data final:
+                  <input type="date" id="toDate" />
+                </label>
+
+                <button id="loadReportsBtn" class="btn-primary small" type="button"
+                  aria-label="Gerar relatório de vendas">
+                  Gerar Relatório
+                </button>
+
+                <button id="exportCsvBtn" class="btn-ghost small" type="button" aria-label="Exportar relatório em CSV">
+                  Exportar CSV
+                </button>
+
+                <button id="exportXlsxBtn" class="btn-ghost small" type="button"
+                  aria-label="Exportar relatório em Excel">
+                  Exportar Excel
+                </button>
+              </div>
+            </div>
+
+            <div class="cards" aria-label="Indicadores">
+              <div class="card">
+                <div class="card-title">Total vendido</div>
+                <div class="card-value" id="repTotal">R$ 0,00</div>
+              </div>
+              <div class="card">
+                <div class="card-title">Nº de vendas</div>
+                <div class="card-value" id="repCount">0</div>
+              </div>
+              <div class="card">
+                <div class="card-title">Ticket médio</div>
+                <div class="card-value" id="repAvg">R$ 0,00</div>
+              </div>
+            </div>
+
+            <div class="two-cols">
+              <div class="panel">
+                <h3>Top Produtos</h3>
+                <div id="topProducts" class="list" aria-label="Lista de top produtos"></div>
+
+                <h3 style="margin-top:12px">Por pagamento</h3>
+                <div id="repPayments" class="list" aria-label="Vendas por forma de pagamento"></div>
+              </div>
+
+              <div class="panel">
+                <h3>Vendas (últimas)</h3>
+                <div class="table-wrap" role="region" aria-label="Tabela de vendas" tabindex="0">
+                  <table class="table" id="salesTable">
+                    <thead>
+                      <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Data</th>
+                        <th scope="col">Pagamento</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Total</th>
+                        <th scope="col">Itens</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+                <p id="reportsMsg" class="hint" role="status" aria-live="polite"></p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CONFIGURAÇÕES -->
+        <section id="tab-settings" class="tab-page" role="tabpanel" aria-label="Configurações">
+          <div class="page">
+            <div class="page-header">
+              <div>
+                <h2>Configurações</h2>
+                <p class="page-sub">Gerencie preferências do estabelecimento, pagamentos, estoque e relatórios.</p>
+              </div>
+
+              <div class="page-actions">
+                <button id="restoreSettingsBtn" class="btn-outline small" type="button">Restaurar padrões</button>
+                <button id="saveSettingsBtn" class="btn-primary small" type="button">Salvar</button>
+              </div>
+            </div>
+
+            <div class="store-header">
+              <h1 id="storeName">-</h1>
+            </div>
+
+            <div class="settings-grid">
+              <div class="card">
+                <div class="card-title" style="display:none"></div>
+                <div class="card-value" id="merchantNameCard">—</div>
+                <div class="hint">Configurações aplicadas pelo estabelecimento</div>
+              </div>
+
+              <div class="card">
+                <div class="card-title">Usuário</div>
+                <div class="card-value" id="userNameCard">—</div>
+                <div class="hint">Permissões podem limitar alterações.</div>
+              </div>
+            </div>
+
+            <div class="settings-grid" style="margin-top:12px;">
+              <div class="card">
+                <div class="card-title">API_BASE</div>
+                <div class="card-value mono" id="apiBaseInfo">—</div>
+              </div>
+              <div class="card">
+                <div class="card-title">API_ORIGIN</div>
+                <div class="card-value mono" id="apiOriginInfo">—</div>
+              </div>
+            </div>
+
+            <div class="panel" style="margin-top:12px;">
+              <div class="section-head">
+                <h3 class="section-title">Preferências</h3>
+              </div>
+
+              <form id="settingsForm" class="settings-form" autocomplete="off" novalidate>
+
+                <div class="panel panel-soft">
+                  <h4 class="panel-title">Dados da Empresa</h4>
+                  <div class="settings-grid">
+                    <label class="field" for="stCompanyName">
+                      <span>Nome da empresa *</span>
+                      <input id="stCompanyName" class="input" type="text" maxlength="120" required />
+                      <small class="hint">Campo obrigatório.</small>
+                    </label>
+
+                    <label class="field" for="stTradeName">
+                      <span>Nome fantasia</span>
+                      <input id="stTradeName" class="input" type="text" maxlength="120" />
+                    </label>
+
+                    <label class="field" for="stDocument">
+                      <span>CPF/CNPJ</span>
+                      <input id="stDocument" class="input" type="text" maxlength="32" />
+                    </label>
+
+                    <label class="field" for="stPhone">
+                      <span>Telefone</span>
+                      <input id="stPhone" class="input" type="text" maxlength="30" />
+                    </label>
+
+                    <label class="field" for="stAddress" style="grid-column: 1 / -1;">
+                      <span>Endereço</span>
+                      <input id="stAddress" class="input" type="text" maxlength="240" />
+                    </label>
+                  </div>
+                </div>
+
+                <div class="panel panel-soft" style="margin-top:12px;">
+                  <h4 class="panel-title">Logo</h4>
+
+                  <div class="logo-settings">
+                    <div class="logo-preview" aria-label="Preview do logo">
+                      <img id="stLogoPreviewImg" alt="Preview do logo" />
+                      <div id="stLogoPreviewPlaceholder" class="logo-placeholder">Sem logo</div>
+                    </div>
+
+                    <div>
+                      <label class="field" for="stLogoFile">
+                        <span>Imagem</span>
+                        <input id="stLogoFile" class="input" type="file" accept="image/png,image/jpeg,image/webp" />
+                        <small class="hint">
+                          Formatos: PNG/JPG/WEBP. Recomendado: 256x256 (quadrado). Exibi\u00e7\u00e3o no topo: 40x40. Tamanho recomendado: 1MB (limite 2MB).
+                        </small>
+                      </label>
+
+                      <div class="logo-actions">
+                        <button id="stLogoUploadBtn" class="btn-primary small" type="button">Enviar logo</button>
+                        <button id="stLogoRemoveBtn" class="btn-outline small" type="button" disabled>Remover</button>
+                      </div>
+
+                      <div id="stLogoMsg" class="hint" role="status" aria-live="polite"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="panel panel-soft">
+                  <h4 class="panel-title">Pagamentos</h4>
+
+                  <div class="settings-grid">
+                    <label class="toggle">
+                      <input id="stAllowCredit" type="checkbox" />
+                      <span class="toggle-ui" aria-hidden="true"></span>
+                      <span class="toggle-text">
+                        <strong>Crédito</strong>
+                        <small class="hint">Habilitar pagamento no crédito</small>
+                      </span>
+                    </label>
+
+                    <label class="toggle">
+                      <input id="stAllowDebit" type="checkbox" />
+                      <span class="toggle-ui" aria-hidden="true"></span>
+                      <span class="toggle-text">
+                        <strong>Débito</strong>
+                        <small class="hint">Habilitar pagamento no débito</small>
+                      </span>
+                    </label>
+
+                    <label class="toggle">
+                      <input id="stAllowPix" type="checkbox" />
+                      <span class="toggle-ui" aria-hidden="true"></span>
+                      <span class="toggle-text">
+                        <strong>PIX</strong>
+                        <small class="hint">Habilitar pagamento via PIX</small>
+                      </span>
+                    </label>
+
+                    <label class="toggle">
+                      <input id="stAllowCash" type="checkbox" />
+                      <span class="toggle-ui" aria-hidden="true"></span>
+                      <span class="toggle-text">
+                        <strong>Dinheiro</strong>
+                        <small class="hint">Habilitar pagamento em espécie</small>
+                      </span>
+                    </label>
+                  </div>
+
+                  <div class="settings-row" style="margin-top:10px;">
+                    <label class="field" for="stDefaultPayment" style="max-width:320px;">
+                      <span>Pagamento padrão</span>
+                      <select id="stDefaultPayment" class="input">
+                        <option value="PIX">PIX</option>
+                        <option value="DEBIT">Débito</option>
+                        <option value="CREDIT">Crédito</option>
+                        <option value="CASH">Dinheiro</option>
+                      </select>
+                      <small class="hint">Opção selecionada automaticamente ao iniciar a venda.</small>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="panel panel-soft" style="margin-top:12px;">
+                  <h4 class="panel-title">Estoque</h4>
+
+                  <div class="settings-grid">
+                    <label class="toggle">
+                      <input id="stStockEnabled" type="checkbox" />
+                      <span class="toggle-ui" aria-hidden="true"></span>
+                      <span class="toggle-text">
+                        <strong>Controle de estoque</strong>
+                        <small class="hint">Quando desativado, o sistema nÆo exibe estoque e nÆo bloqueia vendas por falta de estoque.</small>
+                      </span>
+                    </label>
+
+                    <label class="toggle">
+                      <input id="stAllowNegativeStock" type="checkbox" />
+                      <span class="toggle-ui" aria-hidden="true"></span>
+                      <span class="toggle-text">
+                        <strong>Permitir estoque negativo</strong>
+                        <small class="hint">Se desativado, bloqueia venda sem estoque.</small>
+                      </span>
+                    </label>
+                  </div>
+
+                  <p class="hint" style="margin-top:10px;">
+                    Observação: o estoque é baixado automaticamente a cada venda (regra fixa do sistema).
+                  </p>
+                </div>
+
+                <div class="panel panel-soft" style="margin-top:12px;">
+                  <h4 class="panel-title">Relatórios</h4>
+
+                  <div class="settings-grid">
+                    <label class="field" for="stReportsDefaultRange">
+                      <span>Período padrão</span>
+                      <select id="stReportsDefaultRange" class="input">
+                        <option value="today">Hoje</option>
+                        <option value="week">Esta semana</option>
+                        <option value="month">Este mês</option>
+                      </select>
+                      <small class="hint">Define o intervalo inicial ao abrir Relatórios.</small>
+                    </label>
+
+                    <label class="field" for="stReportsMaxRows">
+                      <span>Máximo de linhas</span>
+                      <input id="stReportsMaxRows" class="input" type="number" min="50" max="200" step="10"
+                        inputmode="numeric" />
+                      <small class="hint">Recomendado: 100. Limite: 50–200 (performance e exportação).</small>
+                    </label>
+                  </div>
+                </div>
+
+                <p id="settingsMsg" class="hint" role="status" aria-live="polite" style="margin-top:10px;"></p>
+              </form>
+
+              <div class="panel panel-soft" style="margin-top:12px;">
+                <h4 class="panel-title">Trocar senha</h4>
+                <form id="changePasswordForm" class="settings-form" autocomplete="off" novalidate>
+                  <div class="settings-grid">
+                    <label class="field" for="cpCurrentPassword">
+                      <span>Senha atual</span>
+                      <input id="cpCurrentPassword" class="input" type="password" autocomplete="current-password"
+                        required />
+                    </label>
+                    <label class="field" for="cpNewPassword">
+                      <span>Nova senha</span>
+                      <input id="cpNewPassword" class="input" type="password" autocomplete="new-password" minlength="6"
+                        required />
+                    </label>
+                    <label class="field" for="cpConfirmPassword">
+                      <span>Confirmar nova senha</span>
+                      <input id="cpConfirmPassword" class="input" type="password" autocomplete="new-password"
+                        minlength="6" required />
+                    </label>
+                  </div>
+                  <div style="margin-top:10px; display:flex; justify-content:flex-end;">
+                    <button id="changePasswordBtn" type="submit" class="btn-primary small">Atualizar senha</button>
+                  </div>
+                  <p id="changePasswordMsg" class="hint" role="status" aria-live="polite" style="margin-top:10px;"></p>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+<!-- XLSX (Excel) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Config (troque apenas este arquivo por ambiente) -->
+  <script src="config.js"></script>
+  <script src="js/maintenance-banner.js"></script>
+
+  <!-- Google Identity Services (Login com Google) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- QRCode (pareamento de terminais/maquininhas) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- App -->
+  <script src="app.js"></script>
+  <script src="payments.js"></script>
+  <script src="js/password-toggle.js"></script>
+
+  <noscript>
+    <div style="margin:16px; padding:12px; border:1px solid #444; border-radius:8px;">
+      Este sistema precisa de JavaScript habilitado para funcionar.
+    </div>
+  </noscript>
+</body>
+</html>

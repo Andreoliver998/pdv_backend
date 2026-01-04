@@ -1,0 +1,30 @@
+:root{
+  color-scheme: dark;
+
+  /* PayTech palette */
+  --bg: #000000;
+  --surface: #0f0f0f;
+  --surface-2: #151515;
+  --text: #ffffff;
+  --muted: rgba(255,255,255,.72);
+  --border: rgba(255,255,255,.10);
+  --border-2: rgba(255,255,255,.16);
+
+  --primary: #FB9B36;
+  --primary-contrast: #000000;
+  --primary-rgb: 251, 155, 54;
+
+  --success: #9DFF2C;
+  --success-contrast: #000000;
+  --success-rgb: 157, 255, 44;
+
+  --danger: #ff4d4d;
+  --danger-rgb: 255, 77, 77;
+
+  --shadow-soft: 0 18px 60px rgba(0,0,0,.55);
+  --shadow-sm: 0 10px 26px rgba(0,0,0,.45);
+
+  --r-md: 14px;
+  --r-sm: 10px;
+}
+

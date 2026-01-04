@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Configurações - PDV</title>
+    <link rel="icon" href="./asset/favicon_pay.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="theme-color" content="#0b1220" />
+  </head>
+  <body>
+    <div class="app-shell" style="min-height: 100vh; display: flex; justify-content: center; padding: 18px;">
+      <main class="panel" style="width: min(900px, 100%);">
+        <div class="section-head" style="align-items: baseline;">
+          <div>
+            <h2 class="section-title">Configurações</h2>
+            <p class="hint" style="margin-top: 6px;">Apenas: Dados da Empresa e Trocar senha.</p>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <a class="btn-outline small" href="./index.html">Voltar ao PDV</a>
+            <button id="logoutBtn" class="btn-ghost small" type="button">Sair</button>
+          </div>
+        </div>
+
+        <div class="settings-grid" style="margin-top: 12px;">
+          <div class="card">
+            <div class="card-title">API_BASE</div>
+            <div class="card-value mono" id="apiBaseInfo">-</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Usuário</div>
+            <div class="card-value" id="userNameInfo">-</div>
+            <div class="hint" id="userEmailInfo"></div>
+          </div>
+        </div>
+
+        <div class="panel panel-soft" style="margin-top: 12px;">
+          <h4 class="panel-title">Dados da Empresa</h4>
+
+          <form id="companyForm" class="settings-form" autocomplete="off" novalidate>
+            <div class="settings-grid">
+              <label class="field" for="companyName">
+                <span>Nome da empresa *</span>
+                <input id="companyName" class="input" type="text" maxlength="120" required />
+                <small class="hint">Campo obrigatório.</small>
+              </label>
+
+              <label class="field" for="tradeName">
+                <span>Nome fantasia</span>
+                <input id="tradeName" class="input" type="text" maxlength="120" />
+              </label>
+
+              <label class="field" for="document">
+                <span>CPF/CNPJ (somente números)</span>
+                <input id="document" class="input" type="text" inputmode="numeric" maxlength="18" />
+              </label>
+
+              <label class="field" for="phone">
+                <span>Telefone</span>
+                <input id="phone" class="input" type="text" maxlength="30" />
+              </label>
+
+              <label class="field" for="address" style="grid-column: 1 / -1;">
+                <span>Endereço</span>
+                <input id="address" class="input" type="text" maxlength="240" />
+              </label>
+            </div>
+
+            <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
+              <button id="saveCompanyBtn" type="submit" class="btn-primary small">Salvar</button>
+            </div>
+
+            <p id="companyMsg" class="hint" role="status" aria-live="polite" style="margin-top: 10px;"></p>
+          </form>
+        </div>
+
+        <div class="panel panel-soft" style="margin-top: 12px;">
+          <h4 class="panel-title">Trocar senha</h4>
+
+          <form id="changePasswordForm" class="settings-form" autocomplete="off" novalidate>
+            <div class="settings-grid">
+              <label class="field" for="currentPassword">
+                <span>Senha atual</span>
+                <input
+                  id="currentPassword"
+                  class="input"
+                  type="password"
+                  autocomplete="current-password"
+                  required
+                />
+              </label>
+
+              <label class="field" for="newPassword">
+                <span>Nova senha</span>
+                <input
+                  id="newPassword"
+                  class="input"
+                  type="password"
+                  autocomplete="new-password"
+                  minlength="6"
+                  required
+                />
+              </label>
+
+              <label class="field" for="confirmPassword">
+                <span>Confirmar nova senha</span>
+                <input
+                  id="confirmPassword"
+                  class="input"
+                  type="password"
+                  autocomplete="new-password"
+                  minlength="6"
+                  required
+                />
+              </label>
+            </div>
+
+            <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
+              <button id="changePasswordBtn" type="submit" class="btn-primary small">Atualizar senha</button>
+            </div>
+
+            <p id="changePasswordMsg" class="hint" role="status" aria-live="polite" style="margin-top: 10px;"></p>
+          </form>
+        </div>
+
+        <p class="hint" style="margin-top: 12px;">
+          Dica: para DEV, confirme que `public/config.js` está com `API_BASE_URL` apontando para `http://127.0.0.1:3333`.
+        </p>
+      </main>
+    </div>
+
+    <!-- Config (troque apenas este arquivo por ambiente) -->
+    <script src="config.js"></script>
+    <script src="config-page.js"></script>
+  </body>
+</html>
+

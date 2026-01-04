@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>PayTech administração</title>
+
+  <!-- CSS: usar relativo para funcionar em /backend/public/admin/ e em /admin/ -->
+  <link rel="stylesheet" href="./theme.css" />
+  <link rel="stylesheet" href="./admin.css" />
+  <link rel="icon" href="./asset/pay-2.png" />
+
+
+  <!-- Se neon.css estiver na raiz do public, deixe esta linha.
+       Se não estiver, coloque uma cópia do neon.css dentro da pasta admin e use ./neon.css -->
+  <link rel="stylesheet" href="/neon.css" />
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h1 class="title">Portal do SuperDono</h1>
+      <div class="row">
+        <span id="adminWho" class="badge mono">-</span>
+        <button id="logoutBtn" class="btn-ghost" type="button">Sair</button>
+      </div>
+    </div>
+
+    <div id="loginCard" class="card">
+      <div class="login-head">
+        <div class="login-badge login-badge--logo">
+          <img src="/asset/pay.png" alt="Logo PayTech" style="height:180px;width:auto;display:block" />
+        </div>
+        <div>
+          <h2 class="login-title">Acesso ao sistema</h2>
+          <p class="login-subtitle">Área restrita para administração.</p>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label class="field">
+          <span>E-mail</span>
+          <input id="loginEmail" type="email" autocomplete="username" placeholder="admin@exemplo.com" />
+        </label>
+
+        <label class="field">
+          <span>Senha</span>
+          <div class="password-field">
+            <input id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••••" />
+            <button
+              type="button"
+              class="password-toggle"
+              aria-label="Mostrar senha"
+              aria-pressed="false"
+              data-toggle-password="#loginPassword"
+              title="Mostrar senha"
+            >
+              <span class="icon-eye" aria-hidden="true"></span>
+            </button>
+          </div>
+        </label>
+
+        <button id="loginBtn" class="btn-neon btn-neon--orange" type="button">Entrar</button>
+        <button id="forgotBtn" class="btn-secondary" type="button">Esqueci minha senha</button>
+      </div>
+      <div id="loginMsg" class="hint"></div>
+    </div>
+
+    <div id="appCard" class="grid" style="display:none">
+      <div class="card">
+        <div class="stats-grid" aria-label="Resumo">
+          <div class="stat">
+            <div class="stat-label">Ativos</div>
+            <div id="statActive" class="stat-value">-</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Suspensos</div>
+            <div id="statSuspended" class="stat-value">-</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Vendas</div>
+            <div id="statSales" class="stat-value">-</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Terminais</div>
+            <div id="statTerminals" class="stat-value">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <label>
+            <span>Busca (loja/email/doc)</span>
+            <input id="queryInput" type="text" placeholder="ex: minha loja" />
+          </label>
+          <label>
+            <span>Status</span>
+            <select id="statusSelect">
+              <option value="">(todos)</option>
+              <option value="ACTIVE">ATIVO</option>
+              <option value="SUSPENDED">SUSPENSO</option>
+            </select>
+          </label>
+          <label>
+            <span>Ordenar</span>
+            <select id="sortSelect">
+              <option value="activity_desc">Última atividade</option>
+              <option value="sales_desc">Vendas</option>
+              <option value="name_asc">Nome (A-Z)</option>
+              <option value="created_desc">Cadastro (recente)</option>
+            </select>
+          </label>
+          <div style="display:flex;align-items:flex-end;gap:10px">
+            <button id="refreshBtn" class="btn-ghost" type="button">Atualizar</button>
+          </div>
+        </div>
+        <div id="listMsg" class="hint"></div>
+      </div>
+
+      <div class="card">
+        <div class="row between" style="margin-bottom:10px">
+          <h2 style="margin:0">Clientes</h2>
+          <span id="listSummary" class="hint" style="margin:0"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Loja</th>
+                <th>Proprietário</th>
+                <th>E-mail</th>
+                <th>Telefone</th>
+                <th>Vendas</th>
+                <th>Terminais</th>
+                <th>Última atividade</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="merchantsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="detailsCard" class="card" style="display:none"></div>
+
+      <div class="card" id="maintenanceCard" style="display:none">
+        <div class="row between" style="margin-bottom:10px">
+          <h2 style="margin:0">Modo manutenção</h2>
+          <span id="maintenanceStatus" class="badge mono">-</span>
+        </div>
+        <div class="row">
+          <label>
+            <span>Ativo</span>
+            <select id="maintenanceEnabled">
+              <option value="false">Não</option>
+              <option value="true">Sim</option>
+            </select>
+          </label>
+          <label style="flex:1;min-width:280px">
+            <span>Mensagem</span>
+            <input id="maintenanceMessage" type="text" placeholder="Ex.: Em manutenção. Voltamos em breve." />
+          </label>
+          <label>
+            <span>Início</span>
+            <input id="maintenanceStartsAt" type="datetime-local" />
+          </label>
+          <label>
+            <span>Fim</span>
+            <input id="maintenanceEndsAt" type="datetime-local" />
+          </label>
+          <div style="display:flex;align-items:flex-end;gap:10px">
+            <button id="maintenanceSaveBtn" class="btn-primary" type="button">Salvar</button>
+          </div>
+        </div>
+        <div id="maintenanceMsg" class="hint"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- config: absoluto para evitar resolver como /admin/config.js -->
+  <script src="/config.js"></script>
+  <script>
+    // Admin deve sempre usar a mesma origem do backend (evita CORS e "perder" acesso).
+    window.__APP_CONFIG__ = window.__APP_CONFIG__ || {};
+    window.__APP_CONFIG__.API_BASE_URL = "/api";
+  </script>
+
+  <!-- password toggle: ajuste para relativo. Se seu arquivo estiver em /js/password-toggle.js
+       dentro do public root, mantenha /js/...; se estiver dentro do admin, use ./password-toggle.js -->
+  <script src="/js/password-toggle.js"></script>
+
+  <!-- admin.js: relativo -->
+  <script src="./admin.js"></script>
+</body>
+</html>

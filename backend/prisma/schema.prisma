@@ -1,0 +1,737 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/**
+ * =========================
+ * ENUMS
+ * =========================
+ */
+
+enum UserRole {
+  OWNER
+  OPERATOR
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+enum PaymentType {
+  CREDIT
+  DEBIT
+  PIX
+  CASH
+}
+
+enum SaleStatus {
+  PENDING
+  PAID
+  DECLINED
+  CANCELLED
+  CANCELED
+}
+
+enum PaymentIntentStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELED
+  ERROR
+  EXPIRED
+}
+
+enum PrintJobStatus {
+  PENDING
+  PRINTING
+  PRINTED
+  ERROR
+  CANCELED
+}
+
+enum MerchantStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  SUPPORT
+  FINANCE
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  OVERDUE
+  SUSPENDED
+}
+
+enum BillingEventType {
+  PAYMENT
+  EXTEND_DUE
+  PLAN_CHANGE
+  SUSPEND
+  UNSUSPEND
+}
+
+enum AuditActorType {
+  ADMIN
+  USER
+}
+
+enum EmailLogStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+/**
+ * =========================
+ * MERCHANT
+ * =========================
+ */
+
+model Merchant {
+  id   Int     @id @default(autoincrement())
+  name String
+  cnpj String? @unique
+
+  status          MerchantStatus @default(ACTIVE)
+  billingDueAt    DateTime?
+  suspendedReason String?
+
+  // Bloqueio "soft" do login no painel (sem apagar dados)
+  isLoginBlocked     Boolean @default(false)
+  loginBlockedReason String?
+
+  // Observações internas (SuperDono)
+  adminNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users             User[]
+  products          Product[]
+  terminals         Terminal[]
+  provisioningCodes TerminalProvisioningCode[]
+  sales             Sale[]
+  paymentIntents    PaymentIntent[]
+  printJobs         PrintJob[]
+
+  settings      MerchantSettings?
+  subscription  Subscription?
+  billingEvents BillingEvent[]
+  auditLogs     AuditLog[]
+  emailLogs     EmailLog[]
+
+  @@index([name])
+  @@index([status])
+}
+
+/**
+ * =========================
+ * ADMIN USER (SUPERDONO)
+ * =========================
+ */
+
+model AdminUser {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         AdminRole @default(SUPER_ADMIN)
+  isActive     Boolean   @default(true)
+
+  billingEventsCreated     BillingEvent[]            @relation("BillingEventCreatedByAdmin")
+  resetTokens              AdminPasswordResetToken[]
+  emailLogs                EmailLog[]
+  systemMaintenanceUpdates SystemMaintenance[]       @relation("SystemMaintenanceUpdatedByAdmin")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([isActive])
+  @@index([role])
+}
+
+/**
+ * =========================
+ * SYSTEM MAINTENANCE (GLOBAL)
+ * =========================
+ */
+
+model SystemMaintenance {
+  id Int @id @default(autoincrement())
+
+  enabled  Boolean   @default(false)
+  message  String?
+  startsAt DateTime?
+  endsAt   DateTime?
+
+  updatedAt DateTime @updatedAt
+
+  updatedByAdminId Int?
+  updatedByAdmin   AdminUser? @relation("SystemMaintenanceUpdatedByAdmin", fields: [updatedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([enabled])
+  @@index([updatedAt])
+}
+
+model AdminPasswordResetToken {
+  id Int @id @default(autoincrement())
+
+  admin   AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  adminId Int
+
+  // hash do token (nunca salvar token puro)
+  tokenHash String @unique
+
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([expiresAt])
+  @@index([usedAt])
+}
+
+/**
+ * =========================
+ * SUBSCRIPTION / BILLING
+ * =========================
+ */
+
+model Subscription {
+  id         Int      @id @default(autoincrement())
+  merchantId Int      @unique
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  plan         SubscriptionPlan   @default(FREE)
+  status       SubscriptionStatus @default(ACTIVE)
+  billingDueAt DateTime?
+  graceDays    Int                @default(3)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([plan])
+  @@index([billingDueAt])
+}
+
+model BillingEvent {
+  id         Int      @id @default(autoincrement())
+  merchantId Int
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  type        BillingEventType
+  amountCents Int?
+  note        String?
+
+  createdByAdminId Int?
+  createdByAdmin   AdminUser? @relation("BillingEventCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([merchantId, createdAt])
+  @@index([type, createdAt])
+  @@index([createdByAdminId])
+}
+
+/**
+ * =========================
+ * AUDIT LOG
+ * =========================
+ */
+
+model AuditLog {
+  id        Int            @id @default(autoincrement())
+  actorType AuditActorType
+  actorId   Int
+
+  merchantId Int?
+  merchant   Merchant? @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  action    String
+  ip        String?
+  userAgent String?
+  payload   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([merchantId, createdAt])
+  @@index([actorType, actorId, createdAt])
+  @@index([action, createdAt])
+}
+
+model EmailMessageTemplate {
+  id Int @id @default(autoincrement())
+
+  key      String  @unique
+  subject  String
+  bodyHtml String
+  bodyText String?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+  @@index([isActive])
+}
+
+model EmailLog {
+  id Int @id @default(autoincrement())
+
+  merchantId Int
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  adminId Int?
+  admin   AdminUser? @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  templateKey String?
+
+  subject String
+  toEmail String
+
+  status   EmailLogStatus @default(QUEUED)
+  provider String
+
+  providerMessageId String?
+  errorMessage      String?
+  metadata          Json?
+
+  createdAt DateTime  @default(now())
+  sentAt    DateTime?
+
+  @@index([merchantId, createdAt])
+  @@index([adminId, createdAt])
+  @@index([status, createdAt])
+  @@index([templateKey])
+  @@index([toEmail])
+}
+
+/**
+ * =========================
+ * TERMINAL PROVISIONING (PAIR CODE)
+ * =========================
+ */
+
+model TerminalProvisioningCode {
+  id         Int      @id @default(autoincrement())
+  code       String   @unique
+  name       String?
+  merchantId Int
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  terminalId Int?
+  terminal   Terminal? @relation(fields: [terminalId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([merchantId, createdAt])
+  @@index([expiresAt])
+  @@index([usedAt])
+  @@index([terminalId])
+}
+
+/**
+ * =========================
+ * USER
+ * =========================
+ */
+
+model User {
+  id    Int    @id @default(autoincrement())
+  name  String
+  email String @unique
+
+  // 🔐 senha SEMPRE em hash (bcrypt/argon2)
+  passwordHash String
+
+  provider        AuthProvider @default(LOCAL)
+  googleSub       String?      @unique
+  avatarUrl       String?
+  emailVerified   Boolean      @default(false)
+  emailVerifiedAt DateTime?
+
+  role     UserRole @default(OWNER)
+  isActive Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchantId Int
+
+  resetTokens             PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+
+  @@index([merchantId])
+  @@index([email])
+  @@index([merchantId, isActive])
+}
+
+/**
+ * =========================
+ * PASSWORD RESET
+ * =========================
+ */
+
+model PasswordResetToken {
+  id Int @id @default(autoincrement())
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  // 🔐 hash do token (nunca salvar token puro)
+  tokenHash String @unique
+
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([usedAt])
+}
+
+model EmailVerificationToken {
+  id Int @id @default(autoincrement())
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  // hash do token (nunca salvar token puro)
+  tokenHash String @unique
+
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([usedAt])
+}
+
+/**
+ * =========================
+ * TERMINAL (MAQUININHA)
+ * =========================
+ */
+
+model Terminal {
+  id         Int    @id @default(autoincrement())
+  name       String
+  identifier String @unique
+  apiKey     String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  status       String    @default("OFFLINE") // OFFLINE/ONLINE/DISABLED
+  lastSeenAt   DateTime?
+  deviceModel  String?
+  deviceSerial String?
+
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchantId Int
+
+  sales          Sale[]
+  paymentIntents PaymentIntent[]
+  printJobs      PrintJob[]
+
+  apiKeys           TerminalApiKey[]
+  pairingCodes      TerminalPairingCode[]
+  provisioningCodes TerminalProvisioningCode[]
+
+  @@index([merchantId])
+  @@index([identifier])
+}
+
+/**
+ * =========================
+ * PRODUCT
+ * =========================
+ */
+
+model Product {
+  id       Int     @id @default(autoincrement())
+  name     String
+  price    Decimal @db.Decimal(10, 2)
+  stock    Int     @default(0)
+  category String?
+  imageUrl String?
+  active   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchantId Int
+
+  saleItems SaleItem[]
+
+  @@index([merchantId, active])
+  @@index([merchantId, name])
+  @@index([category])
+}
+
+/**
+ * =========================
+ * SALE
+ * =========================
+ */
+
+model Sale {
+  id          Int         @id @default(autoincrement())
+  totalAmount Decimal     @db.Decimal(10, 2)
+  paymentType PaymentType
+  status      SaleStatus  @default(PENDING)
+
+  // Metadados de autorização (ex.: Stone/Ton) - opcionais
+  authorizationCode String?
+  transactionId     String?
+  acquirer          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cashReceived Decimal? @db.Decimal(10, 2)
+  changeGiven  Decimal? @db.Decimal(10, 2)
+
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchantId Int
+
+  terminal   Terminal? @relation(fields: [terminalId], references: [id], onDelete: SetNull)
+  terminalId Int?
+
+  items SaleItem[]
+
+  paymentIntent PaymentIntent?
+  printJob      PrintJob?
+
+  @@index([merchantId, createdAt])
+  @@index([terminalId, createdAt])
+  @@index([status])
+  @@index([paymentType])
+}
+
+/**
+ * =========================
+ * PAYMENT INTENT / TRANSACTION
+ * =========================
+ */
+
+model PaymentIntent {
+  id     Int                 @id @default(autoincrement())
+  status PaymentIntentStatus @default(PENDING)
+
+  // pagamento que serÆ feito na maquininha/app
+  paymentType PaymentType
+  amountCents Int
+  currency    String      @default("BRL")
+
+  provider    String  @default("MOCK") // ex.: MOCK, STONE
+  providerRef String?
+
+  idempotencyKey String?
+  metadata       Json?
+  saleDraft      Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  approvedAt DateTime?
+  failedAt   DateTime?
+
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchantId Int
+
+  sale   Sale? @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  saleId Int?  @unique
+
+  terminal   Terminal? @relation(fields: [terminalId], references: [id], onDelete: SetNull)
+  terminalId Int?
+
+  // Id do PrintJob principal criado na aprovaÃ§Ã£o (atalho para o painel/app)
+  printJobId Int?
+
+  transactions PaymentTransaction[]
+  printJobs    PrintJob[]
+
+  @@unique([merchantId, idempotencyKey])
+  @@index([merchantId, createdAt])
+  @@index([status])
+  @@index([provider])
+  @@index([printJobId])
+}
+
+model PaymentTransaction {
+  id          Int                 @id @default(autoincrement())
+  status      PaymentIntentStatus
+  provider    String
+  providerRef String?
+  data        Json?
+
+  createdAt DateTime @default(now())
+
+  intent   PaymentIntent @relation(fields: [intentId], references: [id], onDelete: Cascade)
+  intentId Int
+
+  @@index([intentId, createdAt])
+  @@index([status])
+}
+
+model PrintJob {
+  id     Int            @id @default(autoincrement())
+  status PrintJobStatus @default(PENDING)
+
+  provider String @default("MOCK") // ex.: MOCK, STONE_TON
+  copies   Int    @default(1)
+
+  payload      Json
+  errorMessage String?
+  printedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchantId Int
+
+  sale   Sale? @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  saleId Int?  @unique
+
+  intent   PaymentIntent? @relation(fields: [intentId], references: [id], onDelete: SetNull)
+  intentId Int?
+
+  terminal   Terminal? @relation(fields: [terminalId], references: [id], onDelete: SetNull)
+  terminalId Int?
+
+  @@index([merchantId, createdAt])
+  @@index([status])
+  @@index([intentId])
+  @@index([saleId])
+  @@index([terminalId])
+}
+
+model TerminalApiKey {
+  id         Int @id @default(autoincrement())
+  terminalId Int
+
+  keyHash   String
+  keyPrefix String
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  terminal Terminal @relation(fields: [terminalId], references: [id], onDelete: Cascade)
+
+  @@index([terminalId])
+  @@index([keyPrefix])
+}
+
+model TerminalPairingCode {
+  id         Int       @id @default(autoincrement())
+  terminalId Int
+  code       String    @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  terminal Terminal @relation(fields: [terminalId], references: [id], onDelete: Cascade)
+
+  @@index([terminalId])
+  @@index([expiresAt])
+  @@index([usedAt])
+}
+
+/**
+ * =========================
+ * SALE ITEM
+ * =========================
+ */
+
+model SaleItem {
+  id        Int     @id @default(autoincrement())
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+
+  sale   Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  saleId Int
+
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productId Int
+
+  @@index([saleId])
+  @@index([productId])
+}
+
+/**
+ * =========================
+ * MERCHANT SETTINGS
+ * =========================
+ */
+
+model MerchantSettings {
+  id Int @id @default(autoincrement())
+
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchantId Int      @unique
+
+  // =========================
+  // Dados da Empresa (Perfil)
+  // =========================
+  // companyName é o próprio `Merchant.name` (obrigatório).
+  tradeName String?
+  phone     String?
+  address   String?
+
+  // Logo do estabelecimento (upload)
+  logoUrl       String?
+  logoUpdatedAt DateTime?
+
+  // Estoque: permite desligar completamente o controle (ex.: serviços)
+  stockEnabled Boolean @default(true)
+
+  allowCredit Boolean @default(true)
+  allowDebit  Boolean @default(true)
+  allowPix    Boolean @default(true)
+  allowCash   Boolean @default(true)
+
+  defaultPayment PaymentType @default(PIX)
+
+  allowNegativeStock   Boolean @default(false)
+  decrementStockOnSale Boolean @default(true)
+
+  receiptHeader String?
+  receiptFooter String?
+
+  reportsDefaultRange String @default("today")
+  reportsMaxRows      Int    @default(100)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([merchantId])
+}

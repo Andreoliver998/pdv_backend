@@ -1,0 +1,40 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "PDV Backend with Node.js, Express and Prisma",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20 <23"
+  },
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "seed": "node prisma/seed.js",
+    "admin:seed": "node scripts/seedAdmin.js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.1.0",
+    "@prisma/client": "^6.19.1",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.5.0",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "express-session": "^1.18.2",
+    "google-auth-library": "^10.5.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.0.2",
+    "nodemailer": "^6.10.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "dotenv-cli": "^11.0.0",
+    "nodemon": "^3.1.11",
+    "prisma": "^6.19.1"
+  }
+}
