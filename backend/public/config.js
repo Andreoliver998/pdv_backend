@@ -46,22 +46,35 @@
     return raw;
   }
 
-  // API base
-  if (!String(window.__APP_CONFIG__.API_BASE_URL ?? "").trim()) {
-    const base = qsApiBase
-      ? normalizeBase(qsApiBase)
-      : normalizeBase(isLocal ? "http://127.0.0.1:3333" : "/api");
+  function coerceSafeApiBase(input) {
+    const normalized = normalizeBase(input);
+    if (!normalized) return "";
 
-    window.__APP_CONFIG__.API_BASE_URL = base || (isLocal ? "http://127.0.0.1:3333" : "/api");
+    if (isLocal) return normalized;
+
+    // Em produção (host não-local), nunca permitir base absoluta (evita 127.0.0.1 e URLs externas).
+    // Forçar uso do proxy reverso na mesma origem.
+    if (normalized.startsWith("/")) return normalized;
+    return "/api";
+  }
+
+  // API base (DEV vs PROD)
+  const existing = String(window.__APP_CONFIG__.API_BASE_URL ?? "").trim();
+  if (existing) {
+    window.__APP_CONFIG__.API_BASE_URL = coerceSafeApiBase(existing) || (isLocal ? "http://127.0.0.1:3333" : "/api");
+  } else if (qsApiBase) {
+    window.__APP_CONFIG__.API_BASE_URL = coerceSafeApiBase(qsApiBase) || (isLocal ? "http://127.0.0.1:3333" : "/api");
   } else {
-    window.__APP_CONFIG__.API_BASE_URL = normalizeBase(window.__APP_CONFIG__.API_BASE_URL);
+    window.__APP_CONFIG__.API_BASE_URL = isLocal ? "http://127.0.0.1:3333" : "/api";
   }
 
   // Optional health override (app.js supports it)
   if (!String(window.__APP_CONFIG__.API_HEALTH_URL ?? "").trim()) {
     window.__APP_CONFIG__.API_HEALTH_URL = "";
   } else {
-    window.__APP_CONFIG__.API_HEALTH_URL = normalizeBase(window.__APP_CONFIG__.API_HEALTH_URL);
+    const normalized = normalizeBase(window.__APP_CONFIG__.API_HEALTH_URL);
+    // Em produção (host não-local), permitir apenas caminho relativo (mesma origem).
+    window.__APP_CONFIG__.API_HEALTH_URL = isLocal ? normalized : normalized.startsWith("/") ? normalized : "";
   }
 
   // Google Client ID: prefer runtime load from /api/config/public; keep empty here by default

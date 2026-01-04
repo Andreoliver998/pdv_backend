@@ -84,8 +84,16 @@ const ensureRuntimeConfig = () => {
 ensureRuntimeConfig();
 const API_ORIGIN = (() => {
   if (typeof window === "undefined") return "";
+  const hostname = String(window.location?.hostname || "").trim().toLowerCase();
+  const isLocalHost =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "0.0.0.0" ||
+    hostname === "::1" ||
+    hostname === "[::1]";
   const raw = String(window.__APP_CONFIG__?.API_BASE_URL ?? "").trim().replace(/\/$/, "");
   let apiOrigin = "";
+  if (!isLocalHost && raw && !raw.startsWith("/")) return "";
   if (raw && !raw.startsWith("/")) {
     try {
       apiOrigin = new URL(raw).origin;
@@ -95,9 +103,17 @@ const API_ORIGIN = (() => {
   return apiOrigin;
 })();
 const API_BASE = (() => {
+  const hostname = typeof window !== "undefined" ? String(window.location?.hostname || "").trim().toLowerCase() : "";
+  const isLocalHost =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "0.0.0.0" ||
+    hostname === "::1" ||
+    hostname === "[::1]";
   const raw = String(window.__APP_CONFIG__?.API_BASE_URL ?? "").trim().replace(/\/$/, "");
   if (!raw) return "/api";
   if (raw.startsWith("/")) return raw;
+  if (!isLocalHost) return "/api";
 
   try {
     const url = new URL(raw);
