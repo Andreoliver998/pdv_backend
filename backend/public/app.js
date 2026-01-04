@@ -25,6 +25,14 @@ const ensureRuntimeConfig = () => {
     window.__APP_CONFIG__ = {};
   }
 
+  const hostname = String(window.location?.hostname || "").trim().toLowerCase();
+  const isLocal =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "0.0.0.0" ||
+    hostname === "::1" ||
+    hostname === "[::1]";
+
   // Backward compatibility: suportar injeção antiga via `window.API_BASE` / `window.API_HEALTH`
   if (
     !String(window.__APP_CONFIG__.API_BASE_URL ?? "").trim() &&
@@ -34,6 +42,7 @@ const ensureRuntimeConfig = () => {
     window.__APP_CONFIG__.API_BASE_URL = window.API_BASE.trim();
   }
 
+  // Mantém compatibilidade com API_HEALTH antigo, mas com saneamento depois
   if (
     !String(window.__APP_CONFIG__.API_HEALTH_URL ?? "").trim() &&
     typeof window.__APP_CONFIG__.API_HEALTH === "string" &&
@@ -50,8 +59,25 @@ const ensureRuntimeConfig = () => {
     window.__APP_CONFIG__.API_HEALTH_URL = window.API_HEALTH.trim();
   }
 
-  if (!String(window.__APP_CONFIG__.API_BASE_URL ?? "").trim()) {
-    window.__APP_CONFIG__.API_BASE_URL = "/api";
+  // --- Saneamento: PROD nunca pode apontar para host/URL absoluta ---
+  // Em produção, força usar proxy reverso na mesma origem: "/api"
+  const rawBase = String(window.__APP_CONFIG__.API_BASE_URL ?? "").trim();
+
+  if (!rawBase) {
+    window.__APP_CONFIG__.API_BASE_URL = isLocal ? "http://127.0.0.1:3333" : "/api";
+  } else {
+    // Se é produção e a base NÃO começa com "/", bloqueia e força "/api"
+    if (!isLocal && !rawBase.startsWith("/")) {
+      window.__APP_CONFIG__.API_BASE_URL = "/api";
+    }
+  }
+
+  // Health: se for produção, só aceita path relativo (ou vazio)
+  const rawHealth = String(window.__APP_CONFIG__.API_HEALTH_URL ?? "").trim();
+  if (rawHealth) {
+    if (!isLocal && !rawHealth.startsWith("/")) {
+      window.__APP_CONFIG__.API_HEALTH_URL = "";
+    }
   }
 };
 
@@ -1048,7 +1074,16 @@ function hydrateTopBarInfo() {
   if (userCard) userCard.textContent = userName || "—";
 
   const envText = document.getElementById("envText");
-  if (envText) envText.textContent = API_ORIGIN.includes("localhost") || API_ORIGIN.includes("127.0.0.1") ? "Local" : "Produção";
+  if (envText) {
+    const hostname = String(window.location?.hostname || "").trim().toLowerCase();
+    const isLocal =
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "0.0.0.0" ||
+      hostname === "::1" ||
+      hostname === "[::1]";
+    envText.textContent = isLocal ? "Local" : "Produção";
+  }
 
   const apiBaseInfo = document.getElementById("apiBaseInfo");
   const apiOriginInfo = document.getElementById("apiOriginInfo");

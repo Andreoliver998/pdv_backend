@@ -2,21 +2,35 @@
 (function maintenanceBannerInit() {
   if (typeof window === "undefined" || typeof document === "undefined") return;
 
+  function isLocalHost() {
+    const hostname = String(window.location?.hostname || "").trim().toLowerCase();
+    return (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "0.0.0.0" ||
+      hostname === "::1" ||
+      hostname === "[::1]"
+    );
+  }
+
   function getApiBase() {
-    const fromConfig =
-      window.__APP_CONFIG__ && typeof window.__APP_CONFIG__ === "object" ? window.__APP_CONFIG__.API_BASE_URL : "";
-    const raw = String(fromConfig || "").trim().replace(/\/$/, "");
+    const raw =
+      (window.__APP_CONFIG__ && typeof window.__APP_CONFIG__ === "object"
+        ? String(window.__APP_CONFIG__.API_BASE_URL || "")
+        : "") || "";
 
-    if (!raw) return "/api";
-    if (raw.startsWith("/")) return raw;
+    const v = raw.trim().replace(/\/+$/, "");
 
-    try {
-      const url = new URL(raw);
-      if (!url.pathname || url.pathname === "/") url.pathname = "/api";
-      return url.toString().replace(/\/$/, "");
-    } catch {
-      return raw;
-    }
+    // Sem config -> padrão seguro
+    if (!v) return isLocalHost() ? "http://127.0.0.1:3333" : "/api";
+
+    // Caminho relativo é sempre ok
+    if (v.startsWith("/")) return v;
+
+    // URL absoluta só é permitida em localhost
+    if (!isLocalHost()) return "/api";
+
+    return v;
   }
 
   function escapeHtml(str) {
